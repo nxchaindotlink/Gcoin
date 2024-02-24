@@ -7,22 +7,22 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract Genesis is ERC20 {
     uint16 public constant priceQuota = 1;
     uint16 public constant paymentFeeHolders = 1;
-    string public constant segment = "Agronegocio";
+    string public constant segment = "Investimentos";
     IERC20 public usdtAddress;
     address public owner;
-    uint public timeLock = 30 * 24 * 60 * 60;
-    uint public constant existenceProtocol = 9000 * 24 * 60 * 60;
+    uint32 public timeLock = 30 * 24 * 60 * 60;
+    uint32 public constant existenceProtocol = 9000 * 24 * 60 * 60;
 
-    mapping(address => uint) public timeLockPer;
-    mapping(address => uint) public farming;
-    mapping(address => uint) public lastTimeDeposit;
-    mapping(IERC20 => uint) public reserve;
+    mapping(address => uint256) public timeLockPer;
+    mapping(address => uint256) public farming;
+    mapping(address => uint256) public lastTimeDeposit;
+    mapping(IERC20 => uint256) public reserve;
 
     event Deposit(address _owner, uint reserveMoreAmount, uint timeStamp);
     event Withdraw(address _owner, uint reserveLessAmount, uint timeStamp);
 
     constructor(address _usdtAddress) ERC20("Plural Coin Genesis", "PLG") {
-        _mint(msg.sender, 1_360_45 * 10 ** decimals());
+        _mint(msg.sender, 13_604_500 * 10 ** decimals());
         owner = msg.sender;
         usdtAddress = IERC20(_usdtAddress);
     }
@@ -32,7 +32,7 @@ contract Genesis is ERC20 {
         require(amount > 0, "amount require > 0");
         timeLockPer[msg.sender] = block.timestamp;
         farming[msg.sender] += amount;
-        _transfer(msg.sender, address(this), amount);
+        _transfer(msg.sender, address(this), amount );
     }
 
     function removeYield(uint amount) external {
@@ -54,10 +54,10 @@ contract Genesis is ERC20 {
             farming[msg.sender] >= amount,
             "You don't have tokens staked for rewards"
         );
-        require(
-            block.timestamp >= timeLockPer[msg.sender] + timeLock,
-            "Reward claiming period has not passed yet"
-        );
+         require(
+           block.timestamp >= timeLockPer[msg.sender] + timeLock,
+           "Reward claiming period has not passed yet"
+         );
         require(
             amount <= usdtAddress.balanceOf(address(this)),
             "this contract dont have balance"
@@ -65,7 +65,7 @@ contract Genesis is ERC20 {
         uint elapsedTimeInSeconds = block.timestamp - timeLockPer[msg.sender];
         uint elapsedTimeInMonths = elapsedTimeInSeconds / (30 * 24 * 60 * 60);
         uint totalAmount = elapsedTimeInMonths;
-        uint reward = ((amount * 1) / 100) * totalAmount;
+        uint reward = ((amount * 1 / 10) / 100)* totalAmount;
         usdtAddress.transfer(msg.sender, reward);
         reserve[usdtAddress] -= reward;
         timeLockPer[msg.sender] = block.timestamp;
@@ -95,7 +95,7 @@ contract Genesis is ERC20 {
     }
 
     function decimals() public pure override returns (uint8) {
-        return 2;
+        return 6;
     }
 
     function defineOwner(address _address) external onlyOwner {

@@ -30,7 +30,7 @@ describe("Plural Coin Genesis", function () {
     const { protocoin, owner } = await loadFixture(deployFixture);
 
     const Instance = protocoin.connect(owner);
-    expect(await Instance.balanceOf(owner.address)).to.equal(13604500);
+    expect(await Instance.balanceOf(owner.address)).to.equal(13604500000000);
 
   });
 
@@ -66,7 +66,7 @@ describe("Plural Coin Genesis", function () {
     const { protocoin, owner } = await loadFixture(deployFixture);
 
     const Instance = protocoin.connect(owner);
-    expect(await Instance.decimals()).to.equal(2);
+    expect(await Instance.decimals()).to.equal(6);
 
   });
 
@@ -268,24 +268,24 @@ describe("Plural Coin Genesis", function () {
   it("Should getTxPerTime 30 days", async function () {
     const { protocoin, otherAccount, usdt } = await loadFixture(deployFixture);
 
-    await usdt.approve(protocoin.target, 1000n);
-    await protocoin.deposit(1000n);
+    await usdt.approve(protocoin.target, 1000_000_000n);//1k doll
+    await protocoin.deposit(1_000_000_000n);//1k dol
 
-    await protocoin.transfer(otherAccount.address, 1000n);
+    await protocoin.transfer(otherAccount.address, 1_000_000_000n);
 
     const Instance = protocoin.connect(otherAccount);
 
-    await Instance.addYield(1000n);
+    await Instance.addYield(1_000_000_000n);
 
     await time.increase(30 * 24 * 60 * 60);
 
-    await Instance.getTxPerTime(1000n);
+    await Instance.getTxPerTime(1_000_000_000n);
     
-    expect(await usdt.balanceOf(otherAccount.address)).to.equal(10n);
+    expect(await usdt.balanceOf(otherAccount.address)).to.equal(1000000n);
 
     expect(await protocoin.balanceOf(otherAccount.address)).to.equal(0n);
 
-    expect(await usdt.balanceOf(protocoin.target)).to.equal(990n);
+    expect(await usdt.balanceOf(protocoin.target)).to.equal(999000000n);
 });
 
 
@@ -325,7 +325,7 @@ describe("Plural Coin Genesis", function () {
 
     await Instance.getTxPerTime(1000n);
 
-    expect(await usdt.balanceOf(otherAccount.address)).to.equal(120n);
+    expect(await usdt.balanceOf(otherAccount.address)).to.equal(12n);
 
   });
 

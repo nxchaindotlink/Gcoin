@@ -6,7 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract Usdt is ERC20{
 
     address public immutable owner;
-        
+    
+    
     constructor()ERC20("USDT TOKEN", "USDT"){
         owner = msg.sender;
         _mint(owner, 20_000_000 *10 **decimals());
@@ -15,6 +16,6 @@ contract Usdt is ERC20{
 
 
     function decimals() public pure override returns (uint8){
-    return 8;
+    return 6;
     }
 }
