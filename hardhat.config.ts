@@ -12,10 +12,17 @@ const config: HardhatUserConfig = {
       accounts:{
         mnemonic: process.env.SECRET
       }
+    },
+    mumbai:{
+      url: process.env.RPC_URL_MUMBAI,
+      chainId: parseInt(`${process.env.CHAIN_ID_MUMBAI}`),
+      accounts:{
+        mnemonic: process.env.SECRET
+      }
     }
   }, 
   etherscan:{
-    apiKey: process.env.API_KEY
+    apiKey: process.env.API_KEY_MATIC
   }
 };
 

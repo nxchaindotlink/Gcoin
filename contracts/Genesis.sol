@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Genesis is ERC20 {
-    uint16 public constant priceQuota = 1;
-    uint16 public constant paymentFeeHolders = 1;
+    uint16 public constant priceQuota = 1000;
+    uint32 public constant paymentFeeHolders = 1000000;
     string public constant segment = "Investimentos";
     IERC20 public usdtAddress;
     address public owner;
@@ -22,7 +22,7 @@ contract Genesis is ERC20 {
     event Withdraw(address _owner, uint reserveLessAmount, uint timeStamp);
 
     constructor(address _usdtAddress) ERC20("Plural Coin Genesis", "PLG") {
-        _mint(msg.sender, 13_604_500 * 10 ** decimals());
+        _mint(msg.sender, 68_022_500 * 10 ** decimals());
         owner = msg.sender;
         usdtAddress = IERC20(_usdtAddress);
     }
@@ -49,23 +49,20 @@ contract Genesis is ERC20 {
         _transfer(address(this), msg.sender, amount);
     }
 
-    function getTxPerTime(uint amount) external {
+    function getTxPerTime() external {
+        uint amount = farming[msg.sender];
         require(
-            farming[msg.sender] >= amount,
+            farming[msg.sender] > 0,
             "You don't have tokens staked for rewards"
         );
          require(
            block.timestamp >= timeLockPer[msg.sender] + timeLock,
            "Reward claiming period has not passed yet"
          );
-        require(
-            amount <= usdtAddress.balanceOf(address(this)),
-            "this contract dont have balance"
-        );
         uint elapsedTimeInSeconds = block.timestamp - timeLockPer[msg.sender];
         uint elapsedTimeInMonths = elapsedTimeInSeconds / (30 * 24 * 60 * 60);
         uint totalAmount = elapsedTimeInMonths;
-        uint reward = ((amount * 1 / 10) / 100)* totalAmount;
+        uint reward = (amount * 1  / 1000) * totalAmount;
         usdtAddress.transfer(msg.sender, reward);
         reserve[usdtAddress] -= reward;
         timeLockPer[msg.sender] = block.timestamp;
@@ -92,6 +89,19 @@ contract Genesis is ERC20 {
         usdtAddress.transfer(owner, amount);
         reserve[usdtAddress] -= amount;
         emit Withdraw(msg.sender, amount, block.timestamp);
+    }   
+
+    function buy(uint depositAmount) external {
+        require(usdtAddress.allowance(msg.sender, address(this)) >= depositAmount, "You need balance");
+        usdtAddress.transferFrom(msg.sender, address(this), depositAmount);
+        uint tokenAmount = depositAmount * 10;
+        require(balanceOf(owner) >= depositAmount, "NOT found for this transaction");
+        _transfer(owner,msg.sender, tokenAmount);
+
+    }
+
+    function getOwner() public view returns(address){
+        return owner;
     }
 
     function decimals() public pure override returns (uint8) {

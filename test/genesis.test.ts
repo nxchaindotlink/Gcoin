@@ -4,6 +4,7 @@ import {
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { Await } from "react-router-dom";
 
 describe("Plural Coin Genesis", function () {
 
@@ -30,7 +31,7 @@ describe("Plural Coin Genesis", function () {
     const { protocoin, owner } = await loadFixture(deployFixture);
 
     const Instance = protocoin.connect(owner);
-    expect(await Instance.balanceOf(owner.address)).to.equal(13604500000000);
+    expect(await Instance.balanceOf(owner.address)).to.equal(68022500000000n);
 
   });
 
@@ -73,7 +74,7 @@ describe("Plural Coin Genesis", function () {
   
   it("Should get priceQuota", async function () {
     const { protocoin} = await loadFixture(deployFixture);
-    expect(await protocoin.priceQuota()).to.equal(1n) 
+    expect(await protocoin.priceQuota()).to.equal(1000n) 
   });
 
   it("Should addYield add tokens for income.", async function () {
@@ -275,11 +276,11 @@ describe("Plural Coin Genesis", function () {
 
     const Instance = protocoin.connect(otherAccount);
 
-    await Instance.addYield(1_000_000_000n);
+    await Instance.addYield(1000_000_000n);
 
     await time.increase(30 * 24 * 60 * 60);
 
-    await Instance.getTxPerTime(1_000_000_000n);
+    await Instance.getTxPerTime();
     
     expect(await usdt.balanceOf(otherAccount.address)).to.equal(1000000n);
 
@@ -289,25 +290,29 @@ describe("Plural Coin Genesis", function () {
 });
 
 
+it("Should getTxPerTime 30 days *2", async function () {
+  const { protocoin, otherAccount, usdt } = await loadFixture(deployFixture);
+
+  await protocoin.transfer(otherAccount.address, 1000_000_000n);
+
+  await usdt.approve(protocoin.target, 1000_000_000);
+  await protocoin.deposit(1000_000_000n);
+
+  const Instance = protocoin.connect(otherAccount);
+  await Instance.addYield(1000_000_000n);
+
+  await time.increase(60 *24 *60 *60);
+
+  await Instance.getTxPerTime();
+
+  expect(await usdt.balanceOf(otherAccount.address)).to.equal(2000000n)
+});
 
 
-  it("Should getTxPerTime  Balance not found", async function () {
-    const { protocoin, otherAccount, usdt } = await loadFixture(deployFixture);
 
-    await usdt.approve(protocoin.target, 1000n);
-    await protocoin.deposit(9n);
 
-    await protocoin.transfer(otherAccount.address, 1000n);
 
-    const Instance = protocoin.connect(otherAccount);
 
-    await Instance.addYield(1000n);
-
-    await time.increase(TIME)
-
-    await expect(Instance.getTxPerTime(1000n)).to.be.revertedWith("this contract dont have balance")
-
-  });
 
   it("Should getTxPerTime 12 months", async function () {
     const { protocoin, otherAccount, usdt } = await loadFixture(deployFixture);
@@ -323,32 +328,27 @@ describe("Plural Coin Genesis", function () {
 
     await time.increase(360 * 24 * 60 * 60)
 
-    await Instance.getTxPerTime(1000n);
+    await Instance.getTxPerTime();
 
     expect(await usdt.balanceOf(otherAccount.address)).to.equal(12n);
 
   });
 
 
-  it("Should getTxPerTime ERROR NOT FARMING TOKENS ", async function () {
+  it("Should getTxPerTime ERROR NOT FARMING TOKENS", async function () {
     const { protocoin, otherAccount, usdt } = await loadFixture(deployFixture);
-
+  
     await usdt.approve(protocoin.target, 1000n);
     await protocoin.deposit(1000n);
-
-    await protocoin.transfer(otherAccount.address, 1000n);
-
+  
     const Instance = protocoin.connect(otherAccount);
-
-    await Instance.addYield(1000n);
-
-    await time.increase(TIME)
-
-
-    await expect(Instance.getTxPerTime(1100n)).to.be.revertedWith("You don't have tokens staked for rewards");
-
-
+  
+    // Aguarde o tempo necessário para que a operação de addYield seja possível
+    await time.increase(TIME);
+  
+    await expect(Instance.getTxPerTime()).to.be.revertedWith("You don't have tokens staked for rewards");
   });
+  
 
   it("Should getTxPerTime ERROR time lock not expired", async function () {
     const { protocoin, otherAccount, usdt } = await loadFixture(deployFixture);
@@ -364,7 +364,7 @@ describe("Plural Coin Genesis", function () {
 
     await time.increase(TIME - 20 * 24 * 60 * 60);
 
-    await expect(Instance.getTxPerTime(1000n)).to.be.revertedWith("Reward claiming period has not passed yet");
+    await expect(Instance.getTxPerTime()).to.be.revertedWith("Reward claiming period has not passed yet");
 
 
   });
@@ -436,6 +436,76 @@ describe("Plural Coin Genesis", function () {
     const Other = protocoin.connect(otherAccount);
     await expect(Other.defineMethodPayment(coin.target)).to.be.revertedWith("Only owner permission this function")
   });
+
+  it("Should buy", async function () {
+    const { protocoin, otherAccount, usdt, owner } = await loadFixture(deployFixture);
+    
+    // Transferir USDT para otherAccount
+    await usdt.transfer(otherAccount.address, 1000000000n);
+    
+    // Aprovar o contrato protocoin a gastar USDT em nome de otherAccount
+    const OtherUsdt = usdt.connect(otherAccount);
+    await OtherUsdt.approve(protocoin.target, 1000000000n);
+
+    // Obter o saldo do owner antes da compra
+    const balanceBefore = await protocoin.balanceOf(owner);
+
+    // Chamar a função buy
+    const Other = protocoin.connect(otherAccount);
+    await Other.buy(1000000000n);
+
+    // Verificar os saldos após a compra
+    expect(await usdt.balanceOf(protocoin.target)).to.equal(1000000000n);
+    expect(await protocoin.balanceOf(otherAccount.address)).to.equal(10000_000_000n);
+
+    // Verificar se o saldo do owner diminuiu
+    const balanceAfter = await protocoin.balanceOf(owner);
+    expect(balanceAfter).to.equal(balanceBefore - 10000000000n * 1n);
+});
+
+it("Should NOT balance otheracoount buy", async function () {
+  const { protocoin, otherAccount, usdt, owner } = await loadFixture(deployFixture);
+  
+  // Transferir USDT para otherAccount
+  await usdt.transfer(otherAccount.address, 1000000000n);
+  
+  // Aprovar o contrato protocoin a gastar USDT em nome de otherAccount
+  const OtherUsdt = usdt.connect(otherAccount);
+  await OtherUsdt.approve(protocoin.target, 1000000000n);
+
+  const Other = protocoin.connect(otherAccount);
+
+  await expect(Other.buy(10000000000000)).to.be.revertedWith("You need balance")
+});
+
+
+it("Should NOT balance owner for buy", async function () {
+  const { protocoin, otherAccount, usdt, owner } = await loadFixture(deployFixture);
+  
+  // Transferir USDT para otherAccount
+  await usdt.transfer(otherAccount.address, 1000000000n);
+  
+  // Aprovar o contrato protocoin a gastar USDT em nome de otherAccount
+  const OtherUsdt = usdt.connect(otherAccount);
+  await OtherUsdt.approve(protocoin.target, 1000_000_000n);
+
+  const Other = protocoin.connect(otherAccount);
+
+
+  const BALANCE = await protocoin.balanceOf(owner);
+
+  await protocoin.transfer(usdt.target, BALANCE);
+
+  await expect(Other.buy(1000_000_000n)).to.be.revertedWith("NOT found for this transaction")
+});
+
+
+it("Should NOT balance owner for buy", async function () {
+  const { protocoin, otherAccount, usdt, owner } = await loadFixture(deployFixture);
+  
+  expect(await protocoin.getOwner()).to.equal(owner);
+});
+
 
 });
 
