@@ -4,7 +4,6 @@ import {
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Await } from "react-router-dom";
 
 describe("Plural Coin Genesis", function () {
 
@@ -74,7 +73,7 @@ describe("Plural Coin Genesis", function () {
   
   it("Should get priceQuota", async function () {
     const { protocoin} = await loadFixture(deployFixture);
-    expect(await protocoin.priceQuota()).to.equal(1000n) 
+    expect(await protocoin.priceQuota()).to.equal(100000n) 
   });
 
   it("Should addYield add tokens for income.", async function () {
@@ -441,18 +440,18 @@ it("Should getTxPerTime 30 days *2", async function () {
     const { protocoin, otherAccount, usdt, owner } = await loadFixture(deployFixture);
     
     // Transferir USDT para otherAccount
-    await usdt.transfer(otherAccount.address, 1000000000n);
+    await usdt.transfer(otherAccount.address, 1000_000_000n);
     
     // Aprovar o contrato protocoin a gastar USDT em nome de otherAccount
     const OtherUsdt = usdt.connect(otherAccount);
-    await OtherUsdt.approve(protocoin.target, 1000000000n);
+    await OtherUsdt.approve(protocoin.target, 1000_000_000n);
 
     // Obter o saldo do owner antes da compra
     const balanceBefore = await protocoin.balanceOf(owner);
 
     // Chamar a função buy
     const Other = protocoin.connect(otherAccount);
-    await Other.buy(1000000000n);
+    await Other.buy(1000_000_000n);
 
     // Verificar os saldos após a compra
     expect(await usdt.balanceOf(protocoin.target)).to.equal(1000000000n);
